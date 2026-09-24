@@ -1,69 +1,111 @@
-# 📞 Telco Customer Churn Analysis
+# Telco Customer Churn Analysis
 
-> Data-driven analysis of telecom customer churn to identify key drivers of customer attrition and support retention strategy.
+A SQL-driven exploratory analysis of customer churn for a telecom company,
+using the [IBM Telco Customer Churn dataset](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+(7,043 customers, 21 attributes). The goal: find out **who churns, why, and
+how much revenue it costs** — using SQL queries and a set of chart visuals
+that together act as a lightweight dashboard.
 
-## 📌 Overview
+## Project Structure
 
-This project analyzes **7,032 telecom customer records** to understand why customers churn (leave the service). Using SQL for data extraction and Python (Pandas/Matplotlib) for visualization, the analysis identifies high-risk customer segments based on contract type, services, billing, and tenure.
+```
+telco-customer-churn-analysis/
+├── README.md
+├── telco_churn_clean.csv       # Cleaned dataset used for all analysis
+├── analysis_queries.sql        # 12 SQL queries answering key churn questions
+├── churn_distribution.png      # Chart: overall churn split
+├── churn_by_contract.png       # Chart: churn rate by contract type
+├── churn_by_internet.png       # Chart: churn rate by internet service
+├── churn_by_payment.png        # Chart: churn rate by payment method
+└── churn_by_tenure.png         # Chart: churn rate by tenure group
+```
 
-**Dataset source:** [Telco Customer Churn (Kaggle)](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+## Data Cleaning
 
-## 🛠️ Tech Stack
+The raw dataset has one quirk: `TotalCharges` is stored as text and has 11
+blank values for brand-new customers (`tenure = 0`). The cleaning step:
+- Converts `TotalCharges` to numeric.
+- Fills blanks with `MonthlyCharges × tenure` (a fair estimate for new
+  customers).
+- Recodes `SeniorCitizen` from `0/1` to `No/Yes` for readability in SQL
+  and BI tools.
+- Adds a `TenureGroup` column (`0-1 yr`, `1-2 yr`, `2-4 yr`, `4-5 yr`,
+  `5+ yr`) to make tenure-based grouping easy in SQL.
 
-- **SQL (SQLite)** – Data extraction and querying
-- **Python (Pandas, Matplotlib)** – Data processing and visualization
-- **CSV** – Raw data source
+The result, `telco_churn_clean.csv`, has **0 missing values** across all
+7,043 rows and 22 columns.
 
-## 🔍 What I Did
+## SQL Analysis
 
-- Cleaned and prepared 7,032 customer records (handled missing values in billing data)
-- Wrote SQL queries to analyze churn rate across **contract type**, **internet service**, **payment method**, **tenure**, and **customer demographics**
-- Built visualizations to highlight the strongest churn indicators
-- Identified the highest-risk customer segment to support targeted retention strategy
+`analysis_queries.sql` contains 12 queries (tested and verified against the
+cleaned data), covering:
 
-## 📊 Key Insights (from actual analysis)
+1. Overall churn rate
+2. Churn rate by contract type
+3. Churn rate by internet service type
+4. Churn rate by payment method
+5. Churn rate by tenure group
+6. Average charges: churned vs. retained customers
+7. Estimated monthly/annual revenue at risk from churn
+8. Impact of Online Security + Tech Support on churn
+9. Churn by senior citizen status and dependents
+10. Top 10 highest-value churned customers (win-back list)
+11. Paperless billing vs. churn
+12. Number of bundled add-on services vs. churn
 
-- **Overall churn rate is 26.58%** (1,869 out of 7,032 customers churned)
-- **Contract type is the single strongest churn driver**: Month-to-month customers churn at **42.71%**, vs. just **11.28%** for one-year contracts and **2.85%** for two-year contracts
-- **Fiber optic internet customers churn at 41.89%**, more than double the rate of DSL customers (19%) — possibly due to pricing or service reliability issues
-- **Electronic check users have the highest churn rate (45.29%)** among all payment methods, while automatic payment methods (bank transfer/credit card) show much lower churn (~15-17%)
-- **New customers are highest risk** — churn rate is **47.68% in the first year**, dropping steadily to just **9.51% for customers with 4+ years of tenure**
-- Churned customers pay **higher average monthly charges** ($74.44 vs $61.31) but have **shorter tenure** (18 months vs 37.7 months), representing lost long-term revenue
-- **Highest-risk segment**: Month-to-month contract + Fiber optic + no Tech Support → **57.52% churn rate**
+The queries are written in standard SQL (tested on SQLite) and work with
+minor tweaks on MySQL/PostgreSQL as well — load `telco_churn_clean.csv`
+into a table called `customers` and run them directly.
 
-## 📁 Project Files
+## Key Findings
 
-- `telco_churn_clean.csv` — Cleaned dataset (7,032 customers)
-- `analysis_queries.sql` — All SQL queries used for analysis
-- `churn_distribution.png`, `churn_by_contract.png`, `churn_by_internet.png`, `churn_by_tenure.png`, `churn_by_payment.png` — Visualizations
+**Overall churn rate: 26.5%** (1,869 of 7,043 customers churned)
 
-## 📈 Dashboard Preview
+| Dimension | Highest-risk segment | Churn rate |
+|---|---|---|
+| Contract type | Month-to-month | **42.7%** (vs. 11.3% one-year, 2.8% two-year) |
+| Internet service | Fiber optic | **41.9%** (vs. 19.0% DSL, 7.4% no internet) |
+| Payment method | Electronic check | **45.3%** (vs. 15–19% for other methods) |
+| Tenure | Under 1 year | **47.4%** (drops steadily to 6.6% for 5+ year customers) |
 
-**Overall Churn Distribution**
-![Churn Distribution](churn_distribution.png)
+**Revenue impact**: churned customers represented **$139,131 in lost
+monthly recurring revenue**, or roughly **$1.67M annualized**.
 
-**Churn Rate by Contract Type**
-![Churn by Contract](churn_by_contract.png)
+**Service bundling matters**: customers without Online Security or Tech
+Support churn at a much higher rate than those with both add-ons —
+suggesting bundling is a viable retention lever, not just an upsell.
 
-**Churn Rate by Internet Service**
-![Churn by Internet Service](churn_by_internet.png)
+## Business Recommendations
 
-**Churn Rate by Customer Tenure**
-![Churn by Tenure](churn_by_tenure.png)
+1. **Push month-to-month customers onto annual contracts** (via discounts
+   or perks) — this is the single largest churn driver in the data.
+2. **Investigate fiber optic service quality/pricing** — churn there is
+   more than double the DSL rate.
+3. **Incentivize a move away from electronic check** payments toward
+   automatic bank transfer or credit card, which show much lower churn.
+4. **Target the first 12 months** of the customer lifecycle with proactive
+   retention outreach — that's where churn risk is highest.
+5. **Bundle security/support add-ons** into base plans for new customers to
+   increase stickiness early on.
 
-**Churn Rate by Payment Method**
-![Churn by Payment Method](churn_by_payment.png)
+## How to Reproduce
 
-## 🚀 How to Use
+1. Load `telco_churn_clean.csv` into SQLite (or any SQL database):
+   ```bash
+   sqlite3 telco_churn.db
+   .mode csv
+   .import telco_churn_clean.csv customers
+   ```
+2. Run the queries in `analysis_queries.sql` against that table.
+3. Charts were generated with Python (pandas + matplotlib/seaborn) directly
+   from the same cleaned CSV, using the same groupings as the SQL queries
+   above.
 
-1. Clone this repository
-2. Load `telco_churn_clean.csv` into SQLite (or any SQL engine)
-3. Run queries from `analysis_queries.sql` to reproduce the analysis
-4. Charts can be regenerated using Python (Pandas + Matplotlib)
+## Tech Stack
 
-## 👩‍💻 Author
+SQL (SQLite-compatible) · Python (pandas, matplotlib, seaborn) for
+visualization
 
-**Anjali Singh Thakur**
-Data Analyst | Business Intelligence
-📧 anjalisinghthakur480@gmail.com
-🔗 [LinkedIn](https://linkedin.com/in/anjali-singh-thakur897335225) | [GitHub](https://github.com/AnjaliSinghThakur)
+## License
+
+MIT
